@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q7 · AI 윤리와 책임 | 모듈 2</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  background: #d8d8df;
+  min-height: 100vh;
+  color: #222;
+  font-size: 14px;
+}
+
+/* ── 상단 바 ── */
+#topbar {
+  background: #2c2c3a;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+#topbar .title { color: #fff; font-size: 13.5px; font-weight: 700; }
+.badge-row { display: flex; gap: 6px; align-items: center; }
+.badge {
+  background: rgba(255,255,255,.15); color: #fff;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 9px; border-radius: 12px;
+}
+
+/* ── 콘텐츠 ── */
+#content { padding: 16px 20px 28px; display: flex; justify-content: center; }
+
+/* ── 문항 카드 ── */
+.q-card {
+  background: #fff; border-radius: 8px;
+  padding: 20px 26px 24px;
+  width: 100%; max-width: 860px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.08);
+}
+
+/* 문항 번호 행 */
+.q-num-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.q-num-badge {
+  background: #1a6fe8; color: #fff;
+  font-size: 14px; font-weight: 700;
+  width: 28px; height: 28px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.q-tag {
+  font-size: 11px; color: #1a6fe8;
+  border: 1px solid #1a6fe8; border-radius: 12px; padding: 2px 8px;
+}
+.q-tag.type { color: #555; border-color: #aaa; }
+.q-label { font-size: 12.5px; font-weight: 700; color: #222; margin-left: 4px; }
+
+/* 발문 · 힌트 */
+.q-text { font-size: 14px; font-weight: 400; margin-bottom: 4px; line-height: 1.5; color: #111; }
+.q-hint { font-size: 11.5px; color: #666; margin-bottom: 10px; }
+
+/* ── 카드 풀 ── */
+.pool-label { font-size: 11.5px; font-weight: 700; color: #555; margin-bottom: 6px; }
+.card-pool {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  min-height: 52px; background: #f8f9fb;
+  border: 2px dashed #c5c5c8; border-radius: 8px;
+  padding: 9px; margin-bottom: 10px;
+  transition: border-color .2s, background .2s;
+}
+.card-pool.drag-over { border-color: #1a6fe8; background: #eef4ff; }
+
+/* 드래그 카드 */
+.drag-item {
+  background: #fff; border: 1.5px solid #c5c5c8;
+  border-radius: 8px; padding: 8px 10px;
+  cursor: grab; user-select: none; touch-action: none;
+  transition: box-shadow .15s, border-color .15s, opacity .15s;
+  width: calc(50% - 4px);
+}
+.drag-item:hover { border-color: #1a6fe8; box-shadow: 0 2px 8px rgba(26,111,232,.15); }
+.drag-item.dragging { opacity: .35; cursor: grabbing; }
+.drag-item.placed { opacity: .4; pointer-events: none; }
+.drag-item.unplaced-wrong { border-color: #dc2626; background: #fee2e2; opacity: 1; }
+
+.item-top { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
+.item-label {
+  background: #1a6fe8; color: #fff;
+  padding: 1px 7px; border-radius: 8px;
+  font-size: 11px; font-weight: 800; flex-shrink: 0;
+}
+.item-icon { font-size: 15px; flex-shrink: 0; }
+.item-title { font-size: 12.5px; font-weight: 700; color: #111; line-height: 1.3; }
+.item-desc { font-size: 11.5px; color: #555; line-height: 1.45; }
+.item-desc strong { color: #111; }
+
+/* ── 드롭 영역 ── */
+.zones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.drop-zone {
+  border: 2px dashed #c5c5c8; border-radius: 8px; padding: 10px;
+  min-height: 96px; display: flex; flex-direction: column;
+  transition: all .2s;
+}
+#zone-check { background: #fffbeb; border-color: #d97706; }
+#zone-check.drag-over { border-color: #b45309; background: #fef3c7; }
+#zone-ok { background: #f0fdf4; border-color: #4ade80; }
+#zone-ok.drag-over { border-color: #16a34a; background: #dcfce7; }
+
+.zone-header {
+  font-size: 12.5px; font-weight: 800; margin-bottom: 7px;
+  padding-bottom: 6px; border-bottom: 1.5px solid;
+}
+#zone-check .zone-header { color: #92400e; border-color: #fcd34d; }
+#zone-ok    .zone-header { color: #14532d; border-color: #86efac; }
+
+.zone-chips { flex: 1; display: flex; flex-direction: column; }
+.zone-empty {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  color: #9ca3af; font-size: 11.5px;
+  border: 1.5px dashed #d1d5db; border-radius: 6px; padding: 10px;
+}
+
+/* 드롭된 칩 */
+.placed-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 9px; border-radius: 7px; font-size: 11.5px;
+  margin-bottom: 5px; animation: popIn .25s ease;
+}
+@keyframes popIn { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:scale(1)} }
+.chip-in-check { background: #fef3c7; border: 1.5px solid #f59e0b; }
+.chip-in-ok    { background: #dcfce7; border: 1.5px solid #4ade80; }
+.placed-chip.chip-correct { border-color: #16a34a !important; background: #bbf7d0 !important; }
+.placed-chip.chip-wrong   { border-color: #dc2626 !important; background: #fee2e2 !important; }
+
+.chip-label { font-weight: 800; flex-shrink: 0; color: #374151; font-size: 11px; }
+.chip-title { font-size: 11.5px; color: #374151; flex: 1; line-height: 1.3; }
+.chip-remove {
+  margin-left: auto; flex-shrink: 0;
+  background: #9ca3af; color: #fff; border: none;
+  border-radius: 50%; width: 18px; height: 18px; font-size: 11px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.chip-remove:hover { background: #6b7280; }
+
+/* 칩 피드백 */
+.chip-feedback {
+  display: none; font-size: 11px; line-height: 1.55;
+  padding: 5px 9px; border-radius: 6px; margin-bottom: 5px;
+  color: #7f1d1d; background: #fef2f2; border-left: 3px solid #dc2626;
+}
+.chip-feedback.show { display: block; }
+
+/* ── 버튼 ── */
+.btn-row { display: flex; gap: 10px; }
+.btn-submit {
+  padding: 11px 28px;
+  background: #1a6fe8; color: #fff;
+  border: 2px solid #1a6fe8; border-radius: 7px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: background .15s, border-color .15s; font-family: inherit;
+}
+.btn-submit:hover:not(:disabled) { background: #1558b8; border-color: #1558b8; }
+.btn-submit:disabled { opacity: .5; cursor: default; }
+.btn-reset {
+  padding: 11px 24px; background: #fff; color: #4b5563;
+  border: 2px solid #d1d5db; border-radius: 7px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: inherit;
+}
+.btn-reset:hover { border-color: #9ca3af; background: #f9fafb; }
+
+/* ── 피드백 바 ── */
+.feedback-bar {
+  display: none; margin-top: 11px;
+  padding: 10px 14px; border-radius: 7px;
+  font-size: 13px; font-weight: 700;
+  align-items: center; gap: 8px; line-height: 1.5;
+}
+.feedback-bar.correct { display: flex; background: #e8f9ee; color: #1a7a3a; border: 1.5px solid #1aae50; }
+.feedback-bar.incorrect { display: flex; background: #fff0f0; color: #c01010; border: 1.5px solid #e83030; }
+
+/* 정답 상세 */
+.correct-detail {
+  display: none; margin-top: 8px;
+  padding: 11px 13px; border-radius: 7px;
+  background: #f0fdf4; border: 1.5px solid #86efac;
+  font-size: 12.5px; color: #14532d; line-height: 1.7;
+}
+.correct-detail.show { display: block; }
+
+/* 개념 박스 */
+.concept-box {
+  display: none; margin-top: 8px;
+  padding: 11px 13px; border-radius: 7px;
+  background: #fafafa; border: 1.5px solid #d1d5db;
+}
+.concept-box.show { display: block; }
+.concept-box h4 { font-size: 12px; font-weight: 800; color: #111; margin-bottom: 7px; }
+.concept-row { display: flex; gap: 7px; margin-bottom: 5px; align-items: flex-start; }
+.ctag {
+  background: #1a6fe8; color: #fff;
+  padding: 1px 8px; border-radius: 6px;
+  font-size: 10.5px; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+}
+.concept-row p { font-size: 11.5px; color: #444; line-height: 1.55; }
+
+/* ── 반응형 ── */
+@media (max-width: 600px) {
+  .q-card { padding: 13px 13px 17px; }
+  #content { padding: 10px 10px 22px; }
+  .zones-grid { grid-template-columns: 1fr; }
+  .drag-item { width: 100%; }
+  .badge-row { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- 상단 바 -->
+<header id="topbar">
+  <div class="title">AI 리터러시 평가 · C2. AI 윤리와 책임</div>
+  <div class="badge-row">
+    <span class="badge">모듈 2</span>
+    <span class="badge">C2-3</span>
+    <span class="badge">드래그앤드롭</span>
+    <span class="badge">10점</span>
+    <span class="badge">75~85초</span>
+  </div>
+</header>
+
+<!-- 콘텐츠 -->
+<div id="content">
+<div class="q-card">
+
+  <!-- 문항 번호 행 -->
+  <div class="q-num-row">
+    <div class="q-num-badge" aria-hidden="true">7</div>
+    <span class="q-tag">C2-3</span>
+    <span class="q-tag type">드래그앤드롭 · 기능형</span>
+    <span class="q-label">공유 전 점검하기</span>
+  </div>
+
+  <!-- 발문 -->
+  <p class="q-text">영희는 AI 도구로 완성한 책 소개 영상(북트레일러)을 학교 도서부 SNS에 올리기 전, AI 사용 수칙에 따라 각 구성 요소를 점검하고자 합니다. 다음 5개 카드를 읽고, <strong>점검이 필요한 항목</strong>과 <strong>그렇지 않은 항목</strong>으로 분류해 보세요.</p>
+  <p class="q-hint">💡 카드를 아래 두 영역으로 드래그하세요.</p>
+
+  <!-- 카드 풀 -->
+  <div class="pool-label" aria-hidden="true">📦 구성 요소 카드</div>
+  <div class="card-pool" id="pool" role="list" aria-label="구성 요소 카드"
+    ondragover="onDragOver(event,'pool')"
+    ondragleave="onDragLeave(event,'pool')"
+    ondrop="onDrop(event,'pool')">
+
+    <!-- (가) AI 생성 삽화 -->
+    <div class="drag-item" id="card-ga" role="listitem" draggable="true"
+      tabindex="0" aria-label="(가) AI 생성 삽화"
+      ondragstart="onDragStart(event,'ga')" ondragend="onDragEnd()">
+      <div class="item-top">
+        <span class="item-label">(가)</span>
+        <span class="item-icon" aria-hidden="true">🖼️</span>
+        <span class="item-title">AI 생성 삽화 (5장)</span>
+      </div>
+      <div class="item-desc">주인공 온조(여학생)가 맡은 '상점 주인'이라는 직업과 '해결사'라는 역할을, AI는 <strong>5장 모두 남성으로 그림</strong></div>
+    </div>
+
+    <!-- (나) AI 챗봇 대화 캡처 -->
+    <div class="drag-item" id="card-na" role="listitem" draggable="true"
+      tabindex="0" aria-label="(나) AI 챗봇 대화 캡처"
+      ondragstart="onDragStart(event,'na')" ondragend="onDragEnd()">
+      <div class="item-top">
+        <span class="item-label">(나)</span>
+        <span class="item-icon" aria-hidden="true">💬</span>
+        <span class="item-title">AI 챗봇 대화 캡처</span>
+      </div>
+      <div class="item-desc">책 내용 정리에 활용. 화면에 <strong>친구 지민이의 이름·학년·반</strong>이 보임</div>
+    </div>
+
+    <!-- (다) 목소리 나레이션 -->
+    <div class="drag-item" id="card-da" role="listitem" draggable="true"
+      tabindex="0" aria-label="(다) 목소리 나레이션"
+      ondragstart="onDragStart(event,'da')" ondragend="onDragEnd()">
+      <div class="item-top">
+        <span class="item-label">(다)</span>
+        <span class="item-icon" aria-hidden="true">🎙️</span>
+        <span class="item-title">목소리 나레이션</span>
+      </div>
+      <div class="item-desc">영희가 <strong>직접 녹음한</strong> 나레이션</div>
+    </div>
+
+    <!-- (라) 친구 소연이 사진 -->
+    <div class="drag-item" id="card-ra" role="listitem" draggable="true"
+      tabindex="0" aria-label="(라) 친구 소연이 사진"
+      ondragstart="onDragStart(event,'ra')" ondragend="onDragEnd()">
+      <div class="item-top">
+        <span class="item-label">(라)</span>
+        <span class="item-icon" aria-hidden="true">📸</span>
+        <span class="item-title">친구 소연이 사진</span>
+      </div>
+      <div class="item-desc">영희가 직접 촬영. <strong>소연이에게 SNS 게시 동의를 받지 않음</strong></div>
+    </div>
+
+    <!-- (마) 한 줄 감상 의견 -->
+    <div class="drag-item" id="card-ma" role="listitem" draggable="true"
+      tabindex="0" aria-label="(마) 한 줄 감상 의견"
+      ondragstart="onDragStart(event,'ma')" ondragend="onDragEnd()">
+      <div class="item-top">
+        <span class="item-label">(마)</span>
+        <span class="item-icon" aria-hidden="true">✏️</span>
+        <span class="item-title">한 줄 감상 의견</span>
+      </div>
+      <div class="item-desc">영희가 <strong>직접 작성한</strong> 자신의 생각</div>
+    </div>
+
+  </div><!-- /card-pool -->
+
+  <!-- 드롭 영역 -->
+  <div class="zones-grid">
+    <div class="drop-zone" id="zone-check" role="region" aria-label="확인 필요 영역"
+      ondragover="onDragOver(event,'zone-check')"
+      ondragleave="onDragLeave(event,'zone-check')"
+      ondrop="onDrop(event,'zone-check')">
+      <div class="zone-header">⚠️ 확인 필요</div>
+      <div class="zone-chips" id="chips-check"></div>
+      <div class="zone-empty" id="empty-check" aria-hidden="true">이곳에 드래그하세요</div>
+    </div>
+
+    <div class="drop-zone" id="zone-ok" role="region" aria-label="그대로 사용 가능 영역"
+      ondragover="onDragOver(event,'zone-ok')"
+      ondragleave="onDragLeave(event,'zone-ok')"
+      ondrop="onDrop(event,'zone-ok')">
+      <div class="zone-header">✅ 그대로 사용 가능</div>
+      <div class="zone-chips" id="chips-ok"></div>
+      <div class="zone-empty" id="empty-ok" aria-hidden="true">이곳에 드래그하세요</div>
+    </div>
+  </div>
+
+  <!-- 버튼 -->
+  <div class="btn-row">
+    <button class="btn-reset" id="btnReset" onclick="resetAll()" aria-label="처음으로 되돌리기">
+      ↺ 처음으로 되돌리기
+    </button>
+    <button class="btn-submit" id="btnSubmit" onclick="checkAnswer()" aria-label="분류 완료">
+      분류 완료
+    </button>
+  </div>
+
+  <!-- 피드백 바 -->
+  <div class="feedback-bar" id="feedbackBar" role="alert" aria-live="polite"></div>
+
+  <!-- 정답 상세 -->
+  <div class="correct-detail" id="correctDetail" aria-live="polite">
+    (가)·(나)·(라)를 올바르게 분류했습니다. AI 삽화의 편향 수정, 챗봇 캡처의 개인정보 삭제, 친구 사진의 동의 확보가 각각 필요합니다. (다) 나레이션과 (마) 감상 의견은 영희가 직접 만든 것이므로 그대로 사용할 수 있습니다.
+  </div>
+
+  <!-- 개념 박스 -->
+  <div class="concept-box" id="conceptBox">
+    <h4>💡 공유 전 2가지 점검 원칙</h4>
+    <div class="concept-row">
+      <span class="ctag">편향 확인</span>
+      <p>AI가 생성한 이미지에 성별·인종 편향이 없는지 확인하세요.</p>
+    </div>
+    <div class="concept-row">
+      <span class="ctag">개인정보 보호</span>
+      <p>타인의 이름·사진은 동의 없이 공개할 수 없습니다.</p>
+    </div>
+  </div>
+
+</div><!-- /q-card -->
+</div><!-- /content -->
+
+<script>
+/* ── 상태 ── */
+const placements = { ga:null, na:null, da:null, ra:null, ma:null };
+const CORRECT     = { ga:'check', na:'check', da:'ok', ra:'check', ma:'ok' };
+
+const cardInfo = {
+  ga: { label:'(가)', icon:'🖼️', title:'AI 생성 삽화 (5장)' },
+  na: { label:'(나)', icon:'💬', title:'AI 챗봇 대화 캡처' },
+  da: { label:'(다)', icon:'🎙️', title:'목소리 나레이션' },
+  ra: { label:'(라)', icon:'📸', title:'친구 소연이 사진' },
+  ma: { label:'(마)', icon:'✏️', title:'한 줄 감상 의견' }
+};
+
+const wrongFeedback = {
+  ga: '\'상점 주인\'이라는 직업과 \'해결사\'라는 역할 모두 여학생인 온조가 맡고 있는데, AI 삽화는 5장 모두 이 직업과 역할을 남성으로 그렸습니다. 특정 직업·역할에 성별을 고정하는 편향이 반영된 것이므로 수정이 필요합니다.',
+  na: '대화 캡처 화면에 지민이의 이름·학년·반이 포함되어 있습니다. 동의 없이 공개하면 개인정보 보호 원칙에 어긋납니다.',
+  da: '영희가 직접 녹음한 창작물이므로 그대로 사용할 수 있습니다.',
+  ra: '촬영자가 영희여도, 소연이 동의 없이 공개하면 초상권 침해입니다.',
+  ma: '영희가 직접 쓴 감상 의견이므로 그대로 사용할 수 있습니다.'
+};
+
+let draggingId = null;
+let submitted  = false;
+
+/* ── UI 헬퍼 ── */
+function updateEmptyHints() {
+  ['check','ok'].forEach(zone => {
+    const chips = document.getElementById('chips-' + zone);
+    const empty = document.getElementById('empty-' + zone);
+    empty.style.display = chips.children.length === 0 ? 'flex' : 'none';
+  });
+}
+
+/* ── 카드 배치 ── */
+function placeCard(cardId, zoneType) {
+  if (placements[cardId] !== null) {
+    document.getElementById('chip-'   + cardId)?.remove();
+    document.getElementById('chipfb-' + cardId)?.remove();
+  }
+
+  placements[cardId] = zoneType;
+  document.getElementById('card-' + cardId)?.classList.add('placed');
+
+  const info      = cardInfo[cardId];
+  const chipClass = zoneType === 'check' ? 'chip-in-check' : 'chip-in-ok';
+  const zoneKey   = zoneType === 'check' ? 'check' : 'ok';
+
+  const chip = document.createElement('div');
+  chip.className = 'placed-chip ' + chipClass;
+  chip.id = 'chip-' + cardId;
+  chip.innerHTML = `
+    <span class="chip-label">${info.label}</span>
+    <span class="chip-title">${info.icon} ${info.title}</span>
+    <button class="chip-remove" onclick="returnToPool('${cardId}')" title="되돌리기" aria-label="${info.label} 되돌리기">↩</button>
+  `;
+
+  const fb = document.createElement('div');
+  fb.className = 'chip-feedback';
+  fb.id = 'chipfb-' + cardId;
+
+  const chipsEl = document.getElementById('chips-' + zoneKey);
+  chipsEl.appendChild(chip);
+  chipsEl.appendChild(fb);
+
+  updateEmptyHints();
+}
+
+function returnToPool(cardId) {
+  if (submitted) return;
+  document.getElementById('chip-'   + cardId)?.remove();
+  document.getElementById('chipfb-' + cardId)?.remove();
+  placements[cardId] = null;
+  document.getElementById('card-' + cardId)?.classList.remove('placed');
+  updateEmptyHints();
+}
+
+/* ── 드래그 이벤트 ── */
+function onDragStart(e, id) {
+  if (submitted) { e.preventDefault(); return; }
+  draggingId = id;
+  setTimeout(() => document.getElementById('card-' + id)?.classList.add('dragging'), 0);
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', id);
+}
+function onDragEnd() {
+  if (draggingId) document.getElementById('card-' + draggingId)?.classList.remove('dragging');
+  draggingId = null;
+}
+function onDragOver(e, zoneId) {
+  e.preventDefault();
+  document.getElementById(zoneId)?.classList.add('drag-over');
+}
+function onDragLeave(e, zoneId) {
+  document.getElementById(zoneId)?.classList.remove('drag-over');
+}
+function onDrop(e, targetZone) {
+  e.preventDefault();
+  document.getElementById(targetZone)?.classList.remove('drag-over');
+  const id = e.dataTransfer.getData('text/plain') || draggingId;
+  if (!id || submitted) return;
+  handleDrop(id, targetZone);
+}
+function handleDrop(cardId, targetZone) {
+  if (targetZone === 'pool') {
+    returnToPool(cardId);
+  } else if (targetZone === 'zone-check' && placements[cardId] !== 'check') {
+    placeCard(cardId, 'check');
+  } else if (targetZone === 'zone-ok' && placements[cardId] !== 'ok') {
+    placeCard(cardId, 'ok');
+  }
+}
+
+/* ── 채점 ── */
+function checkAnswer() {
+  if (submitted) return;
+  submitted = true;
+
+  document.querySelectorAll('.chip-remove').forEach(btn => { btn.style.display = 'none'; });
+
+  let allCorrect = true;
+  Object.keys(placements).forEach(cardId => {
+    if (placements[cardId] === null) {
+      document.getElementById('card-' + cardId)?.classList.add('unplaced-wrong');
+      allCorrect = false;
+      return;
+    }
+    const chip = document.getElementById('chip-'   + cardId);
+    const fb   = document.getElementById('chipfb-' + cardId);
+    const isCorrect = placements[cardId] === CORRECT[cardId];
+    if (isCorrect) {
+      chip?.classList.add('chip-correct');
+    } else {
+      chip?.classList.add('chip-wrong');
+      allCorrect = false;
+      if (fb) { fb.textContent = wrongFeedback[cardId]; fb.classList.add('show'); }
+    }
+  });
+
+  const bar = document.getElementById('feedbackBar');
+  if (allCorrect) {
+    bar.className = 'feedback-bar correct';
+    bar.innerHTML = '🎉 <strong>정답입니다!</strong> 모든 항목을 올바르게 분류했어요.';
+    document.getElementById('correctDetail').classList.add('show');
+  } else {
+    bar.className = 'feedback-bar incorrect';
+    bar.innerHTML = '😅 <strong>아쉬워요!</strong> 빨간색 항목을 확인하세요. AI 사용 수칙(편향·개인정보 보호)을 다시 확인해 보세요.';
+  }
+  document.getElementById('conceptBox').classList.add('show');
+  document.getElementById('btnSubmit').disabled = true;
+
+  setTimeout(() => bar.scrollIntoView({ behavior:'smooth', block:'nearest' }), 200);
+}
+
+/* ── 초기화 ── */
+function resetAll() {
+  submitted = false;
+  Object.keys(placements).forEach(k => { placements[k] = null; });
+  ['ga','na','da','ra','ma'].forEach(id => {
+    document.getElementById('card-' + id)?.classList.remove('placed','dragging','unplaced-wrong');
+  });
+  ['check','ok'].forEach(zone => { document.getElementById('chips-' + zone).innerHTML = ''; });
+
+  updateEmptyHints();
+
+  const bar = document.getElementById('feedbackBar');
+  bar.className = 'feedback-bar';
+  bar.innerHTML = '';
+  document.getElementById('correctDetail').classList.remove('show');
+  document.getElementById('conceptBox').classList.remove('show');
+  document.getElementById('btnSubmit').disabled = false;
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+/* 초기 hint 설정 */
+updateEmptyHints();
+
+/* ── 터치 드래그앤드롭 (모바일) ── */
+let tItem=null, tClone=null, tOffX=0, tOffY=0;
+
+document.addEventListener('touchstart', e => {
+  const item = e.target.closest('.drag-item');
+  if (!item || submitted || item.classList.contains('placed')) return;
+  tItem = item;
+  const r = item.getBoundingClientRect();
+  tOffX = e.touches[0].clientX - r.left;
+  tOffY = e.touches[0].clientY - r.top;
+  tClone = item.cloneNode(true);
+  tClone.style.cssText = `
+    position:fixed;pointer-events:none;z-index:9000;
+    width:${r.width}px;left:${r.left}px;top:${r.top}px;
+    opacity:.82;box-shadow:0 6px 20px rgba(0,0,0,.2);
+    transform:rotate(1.5deg) scale(1.03);transition:none;`;
+  document.body.appendChild(tClone);
+  item.style.opacity = '.35';
+}, { passive:true });
+
+document.addEventListener('touchmove', e => {
+  if (!tClone) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  tClone.style.left = (t.clientX - tOffX) + 'px';
+  tClone.style.top  = (t.clientY - tOffY) + 'px';
+  tClone.style.display = 'none';
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  tClone.style.display = '';
+  document.querySelectorAll('.drop-zone,.card-pool').forEach(z => z.classList.remove('drag-over'));
+  const zone = el?.closest('#zone-check') || el?.closest('#zone-ok') || el?.closest('#pool');
+  if (zone) zone.classList.add('drag-over');
+}, { passive:false });
+
+document.addEventListener('touchend', e => {
+  if (!tClone || !tItem) return;
+  const t = e.changedTouches[0];
+  tClone.style.display = 'none';
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  tClone.style.display = '';
+  document.querySelectorAll('.drop-zone,.card-pool').forEach(z => z.classList.remove('drag-over'));
+  const zone = el?.closest('#zone-check') || el?.closest('#zone-ok') || el?.closest('#pool');
+  if (zone) handleDrop(tItem.id.replace('card-',''), zone.id);
+  tItem.style.opacity = '1';
+  tClone.remove(); tClone = null; tItem = null;
+});
+</script>
+</body>
+</html>

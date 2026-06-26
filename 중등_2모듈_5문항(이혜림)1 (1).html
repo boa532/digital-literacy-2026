@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5문항 - 포스터 수정·개선</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nanum Gothic', '맑은 고딕', sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 28px 16px 56px;
+  }
+
+  .top-card {
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    padding: 26px 30px;
+    max-width: 980px; width: 100%; margin-bottom: 16px;
+  }
+
+  .question-number {
+    display: inline-block; background: #3b5bdb; color: #fff;
+    font-weight: 700; font-size: 14px; border-radius: 20px;
+    padding: 4px 14px; margin-bottom: 12px; letter-spacing: .5px;
+  }
+
+  .question-text { font-size: 15.5px; line-height: 1.9; color: #1a1a2e; font-weight: 600; }
+
+  .purpose-card {
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    padding: 16px 28px;
+    max-width: 980px; width: 100%; margin-bottom: 20px;
+    border-left: 5px solid #3b5bdb;
+  }
+
+  .purpose-label { font-size: 12px; font-weight: 700; color: #3b5bdb; margin-bottom: 8px; letter-spacing: .4px; }
+  .purpose-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .purpose-list li {
+    font-size: 13.5px; color: #1a1a2e; line-height: 1.65;
+    display: flex; gap: 7px;
+  }
+  .purpose-list li::before { content: '✔'; color: #3b5bdb; font-size: 12px; flex-shrink: 0; margin-top: 2px; }
+
+  /* 메인 2열 */
+  .main-area {
+    max-width: 980px; width: 100%;
+    display: grid; grid-template-columns: 300px 1fr;
+    gap: 22px; align-items: start;
+  }
+
+  /* 왼쪽 */
+  .poster-col { display: flex; flex-direction: column; gap: 12px; }
+
+  .poster-frame {
+    width: 260px; height: 370px;
+    border-radius: 12px; overflow: hidden;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,.22);
+    flex-shrink: 0;
+  }
+
+  #pBgLayer {
+    position: absolute; inset: 0;
+    background: linear-gradient(160deg, #94a3b8, #64748b);
+    transition: background .4s ease;
+  }
+
+  #pDecoLayer {
+    position: absolute; inset: 0;
+    pointer-events: none; overflow: hidden;
+    z-index: 1;
+  }
+
+  #pClockLayer {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 2;
+  }
+
+  #pContent {
+    position: absolute; inset: 0; z-index: 3;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: flex-end;
+    padding: 14px 14px 16px;
+    pointer-events: none;
+  }
+
+  .p-title-text {
+    font-size: 17px; font-weight: 900; letter-spacing: 1px;
+    text-align: center; color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,.5);
+    display: none;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .p-question {
+    padding: 9px 12px; border-radius: 8px;
+    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3);
+    font-size: 11.5px; font-weight: 600; color: #fff;
+    text-align: center; line-height: 1.65;
+    backdrop-filter: blur(4px); display: none; width: 100%;
+  }
+
+  .edit-label {
+    background: #fff8e1; border-radius: 12px;
+    padding: 12px 16px; border-left: 4px solid #f59e0b;
+    font-size: 14px; font-weight: 800; color: #92400e;
+  }
+
+  /* 오른쪽 */
+  .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+  .ai-prompt-card {
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    padding: 16px 20px;
+  }
+
+  .ai-tool-label {
+    font-size: 11px; font-weight: 700; color: #868e96;
+    letter-spacing: .6px; text-transform: uppercase;
+    margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+  }
+  .ai-tool-label::before {
+    content: ''; display: inline-block;
+    width: 8px; height: 8px; border-radius: 50%; background: #40c057;
+  }
+
+  .prompt-row {
+    background: #f8f9fa; border: 1.5px solid #dee2e6; border-radius: 10px;
+    padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .prompt-icon { font-size: 16px; flex-shrink: 0; }
+  .prompt-text { flex: 1; font-size: 13px; color: #343a40; font-weight: 600; }
+  .prompt-badge {
+    background: #3b5bdb; color: #fff; border: none; border-radius: 7px;
+    padding: 5px 11px; font-size: 11px; font-weight: 700; flex-shrink: 0; opacity: .85;
+  }
+
+  /* 컨트롤 패널 */
+  .controls-panel {
+    background: #fff; border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    padding: 24px;
+    display: flex; flex-direction: column;
+  }
+
+  .ctrl-section {
+    padding-bottom: 20px; margin-bottom: 20px;
+    border-bottom: 1px solid #f1f3f5;
+  }
+  .ctrl-section:last-of-type { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+
+  .ctrl-section-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 14px;
+  }
+
+  .ctrl-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: #3b5bdb; color: #fff;
+    font-size: 12px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  .ctrl-label { font-size: 12px; font-weight: 700; color: #495057; margin-bottom: 9px; letter-spacing: .3px; }
+
+  /* 제목 입력 */
+  .title-input-row { display: flex; gap: 8px; }
+  .title-input {
+    flex: 1; padding: 10px 14px; border-radius: 10px;
+    border: 1.5px solid #dee2e6; font-size: 13px; color: #1a1a2e;
+    font-family: inherit; outline: none; transition: border-color .15s;
+  }
+  .title-input:focus { border-color: #3b5bdb; }
+  .title-input::placeholder { color: #adb5bd; }
+  .apply-btn {
+    padding: 10px 16px; border-radius: 10px; border: none;
+    background: #3b5bdb; color: #fff; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .15s; white-space: nowrap; font-family: inherit;
+  }
+  .apply-btn:hover { background: #2f4ac5; transform: translateY(-1px); }
+  .input-hint { font-size: 11.5px; color: #adb5bd; margin-top: 7px; }
+
+  /* 칩 */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .opt-chip {
+    padding: 8px 14px; border-radius: 20px;
+    border: 2px solid #dee2e6; background: #fff;
+    font-size: 12.5px; font-weight: 600; color: #495057;
+    cursor: pointer; transition: all .15s; user-select: none;
+    display: flex; align-items: center;
+  }
+  .opt-chip:hover:not(.on) { border-color: #748ffc; color: #3b5bdb; background: #edf2ff; }
+  .opt-chip.on { border-color: #3b5bdb; background: #3b5bdb; color: #fff; }
+
+  .color-dot {
+    display: inline-block; width: 12px; height: 12px;
+    border-radius: 50%; margin-right: 5px;
+    border: 1.5px solid rgba(0,0,0,.12); flex-shrink: 0;
+  }
+  .opt-chip.on .color-dot { border-color: rgba(255,255,255,.5); }
+
+  .q-chip {
+    display: block; width: 100%;
+    padding: 10px 14px; border-radius: 12px;
+    border: 2px solid #dee2e6; background: #fff;
+    font-size: 12.5px; font-weight: 600; color: #495057;
+    cursor: pointer; transition: all .15s; user-select: none;
+    text-align: left; margin-bottom: 8px;
+  }
+  .q-chip:last-of-type { margin-bottom: 0; }
+  .q-chip:hover:not(.on) { border-color: #748ffc; color: #3b5bdb; background: #edf2ff; }
+  .q-chip.on { border-color: #3b5bdb; background: #edf2ff; color: #3b5bdb; }
+
+  .finish-btn {
+    width: 100%; margin-top: 20px; padding: 14px;
+    border-radius: 12px; border: none;
+    background: linear-gradient(135deg, #2f9e44, #40c057);
+    color: #fff; font-size: 14px; font-weight: 700;
+    cursor: pointer; transition: all .2s; font-family: inherit;
+    box-shadow: 0 4px 14px rgba(47,158,68,.3); letter-spacing: .3px;
+  }
+  .finish-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(47,158,68,.4); }
+
+  /* 모달 */
+  .modal-bg {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.45); z-index: 999;
+    align-items: center; justify-content: center;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: #fff; border-radius: 20px;
+    padding: 44px 52px; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.22);
+    animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
+    border-top: 6px solid #2f9e44;
+    max-width: 400px; width: 92%;
+  }
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(.82); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .modal-icon { font-size: 50px; margin-bottom: 14px; }
+  .modal-title { font-size: 20px; font-weight: 800; color: #1a1a2e; margin-bottom: 10px; }
+  .modal-sub { font-size: 14px; color: #495057; line-height: 1.8; margin-bottom: 24px; font-weight: 600; }
+  .modal-close {
+    background: #2f9e44; color: #fff; border: none; border-radius: 10px;
+    padding: 11px 36px; font-size: 15px; font-weight: 700; font-family: inherit;
+    cursor: pointer; transition: background .15s;
+  }
+  .modal-close:hover { background: #2b8a3e; }
+
+  @media (max-width: 700px) {
+    .main-area { grid-template-columns: 1fr; }
+    .poster-frame { width: 240px; height: 340px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 문항 카드 -->
+<div class="top-card">
+  <span class="question-number">5 문항</span>
+  <p class="question-text">도서 추천 AI 서비스가 「이달의 추천 도서」로 선정한 책 『시간을 파는 상점』을 소개하기 위해 AI 이미지 생성 도구로 초안 포스터를 만들었습니다. 초안 포스터를 살펴보고, <strong>포스터 제작 목적에 맞게 수정·개선</strong>해 보세요.</p>
+</div>
+
+<!-- 목적 카드 -->
+<div class="purpose-card">
+  <div class="purpose-label">📋 포스터 제작 목적</div>
+  <ul class="purpose-list">
+    <li>우리 학교 중학생들에게 『시간을 파는 상점』 책 제목을 소개한다.</li>
+    <li>시간의 소중함에 대해 생각해 볼 수 있도록 질문을 표시한다.</li>
+    <li>학생들의 관심을 끌 수 있도록 노란색 배경과 연말의 밝고 따뜻한 분위기를 표현한다.</li>
+  </ul>
+</div>
+
+<!-- 메인 영역 -->
+<div class="main-area">
+
+  <!-- ━━ 왼쪽: 포스터 ━━ -->
+  <div class="poster-col">
+    <div class="poster-frame" id="posterFrame">
+      <div id="pBgLayer"></div>
+      <div id="pDecoLayer"></div>
+      <!-- AI 생성 이미지 -->
+      <div id="pClockLayer">
+        <svg width="144" height="188" viewBox="0 0 205 268" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 6px 20px rgba(0,0,0,.38))">
+          <defs>
+            <radialGradient id="bgGrad" cx="50%" cy="38%" r="70%">
+              <stop offset="0%" stop-color="#3b1c7a"/>
+              <stop offset="100%" stop-color="#170e3a"/>
+            </radialGradient>
+          </defs>
+          <!-- 진한 보라 배경 카드 -->
+          <rect x="0" y="0" width="205" height="268" rx="14" fill="url(#bgGrad)"/>
+          <!-- 별 장식 -->
+          <circle cx="24"  cy="44"  r="3.5" fill="#fbbf24" opacity=".92"/>
+          <circle cx="170" cy="32"  r="2.2" fill="#fbbf24" opacity=".78"/>
+          <circle cx="180" cy="88"  r="2.8" fill="#fbbf24" opacity=".82"/>
+          <circle cx="183" cy="138" r="2"   fill="#fbbf24" opacity=".55"/>
+          <circle cx="18"  cy="128" r="1.8" fill="#fbbf24" opacity=".5"/>
+          <circle cx="162" cy="205" r="2.5" fill="#fbbf24" opacity=".68"/>
+          <circle cx="186" cy="190" r="1.8" fill="#fbbf24" opacity=".48"/>
+          <circle cx="30"  cy="218" r="2"   fill="#c4b5fd" opacity=".55"/>
+          <circle cx="93"  cy="20"  r="2"   fill="#fbbf24" opacity=".58"/>
+          <circle cx="144" cy="25"  r="2.2" fill="#c4b5fd" opacity=".52"/>
+          <circle cx="44"  cy="86"  r="1.5" fill="#c4b5fd" opacity=".5"/>
+          <circle cx="55"  cy="198" r="1.8" fill="#fbbf24" opacity=".4"/>
+          <!-- 시계 외곽 글로우 -->
+          <circle cx="102" cy="138" r="80" fill="#5b21b6" opacity=".18"/>
+          <!-- 시계 링 (라벤더) -->
+          <circle cx="102" cy="138" r="70" fill="#170e3a" stroke="#a78bfa" stroke-width="5.5"/>
+          <!-- 시 표시 (12·3·6·9) -->
+          <line x1="102" y1="71"  x2="102" y2="83"  stroke="#a78bfa" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="102" y1="193" x2="102" y2="205" stroke="#a78bfa" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="35"  y1="138" x2="47"  y2="138" stroke="#a78bfa" stroke-width="3.5" stroke-linecap="round"/>
+          <line x1="157" y1="138" x2="169" y2="138" stroke="#a78bfa" stroke-width="3.5" stroke-linecap="round"/>
+          <!-- 시침 (10시 방향: 300° → sin=-0.866, cos=0.5) r=45 -->
+          <line x1="102" y1="138" x2="63"  y2="115" stroke="#fbbf24" stroke-width="5.5" stroke-linecap="round"/>
+          <!-- 분침 (2시 방향: 60° → sin=0.866, cos=0.5) r=57 -->
+          <line x1="102" y1="138" x2="151" y2="109" stroke="#fbbf24" stroke-width="4"   stroke-linecap="round"/>
+          <!-- 중심점 -->
+          <circle cx="102" cy="138" r="7"   fill="#fbbf24"/>
+          <circle cx="102" cy="138" r="3.2" fill="#fef3c7"/>
+        </svg>
+      </div>
+      <!-- 콘텐츠 레이어 -->
+      <div id="pContent">
+        <div id="pTitleText" class="p-title-text"></div>
+      </div>
+      <!-- 문구 오버레이: 포스터 위에 표시 -->
+      <div id="pQuestion" class="p-question" style="position:absolute; top:16px; left:14px; right:14px; z-index:4; width:auto;"></div>
+    </div>
+    <div style="font-size:12px; font-weight:700; color:#6b7280; text-align:center; letter-spacing:.3px;">&lt;AI 이미지 생성 도구가 만든 초안 포스터&gt;</div>
+
+  </div>
+
+  <!-- ━━ 오른쪽 ━━ -->
+  <div class="right-col">
+
+    <!-- AI 프롬프트 표시 -->
+    <div class="ai-prompt-card">
+      <div class="ai-tool-label">AI 이미지 생성 도구</div>
+      <div class="prompt-row">
+        <div class="prompt-icon">✏️</div>
+        <div class="prompt-text">『시간을 파는 상점』 책 포스터 만들어 줘</div>
+        <div class="prompt-badge">입력됨</div>
+      </div>
+    </div>
+
+    <!-- 포스터 수정 개선 라벨 -->
+    <div class="edit-label">✏️ 포스터 수정, 개선</div>
+
+    <!-- 컨트롤 패널 -->
+    <div class="controls-panel">
+
+      <!-- 1. 제목 입력 -->
+      <div class="ctrl-section">
+        <div class="ctrl-section-title">
+          <span class="ctrl-num">1</span>
+          책 제목 추가
+        </div>
+        <div class="ctrl-label">텍스트를 입력하고 '적용' 버튼을 클릭하세요</div>
+        <div class="title-input-row">
+          <input class="title-input" id="titleInput" type="text" maxlength="20"/>
+          <button class="apply-btn" onclick="applyTitle()">적용</button>
+        </div>
+        <div class="input-hint">※ 포스터 하단에 제목이 표시됩니다</div>
+      </div>
+
+      <!-- 2. 문구 추가 -->
+      <div class="ctrl-section">
+        <div class="ctrl-section-title">
+          <span class="ctrl-num">2</span>
+          문구 추가
+        </div>
+        <div class="ctrl-label">보기에서 선택하세요</div>
+        <div id="questionChips">
+          <div class="q-chip" onclick="selectQ(this, '당신의 시간은 얼마짜리인가요?')">당신의 시간은 얼마짜리인가요?</div>
+          <div class="q-chip" onclick="selectQ(this, '내가 가장 좋아하는 사람은?')">내가 가장 좋아하는 사람은?</div>
+          <div class="q-chip" onclick="selectQ(this, '미래는 어떤 세상일까?')">미래는 어떤 세상일까?</div>
+        </div>
+      </div>
+
+      <!-- 3. 배경색 -->
+      <div class="ctrl-section">
+        <div class="ctrl-section-title">
+          <span class="ctrl-num">3</span>
+          배경색
+        </div>
+        <div class="chip-row">
+          <div class="opt-chip bg-chip on" id="bgNone" onclick="setBg(this, null)">없음 (회색)</div>
+          <div class="opt-chip bg-chip" id="bgRed" onclick="setBg(this, 'red')">
+            <span class="color-dot" style="background:#ef4444"></span>빨간색
+          </div>
+          <div class="opt-chip bg-chip" id="bgYellow" onclick="setBg(this, 'yellow')">
+            <span class="color-dot" style="background:#fbbf24"></span>노란색
+          </div>
+          <div class="opt-chip bg-chip" id="bgBlue" onclick="setBg(this, 'blue')">
+            <span class="color-dot" style="background:#3b82f6"></span>파란색
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. 분위기 -->
+      <div class="ctrl-section">
+        <div class="ctrl-section-title">
+          <span class="ctrl-num">4</span>
+          분위기
+        </div>
+        <div class="chip-row">
+          <div class="opt-chip atm-chip" onclick="setAtm(this, '화려한')">✨ 화려한</div>
+          <div class="opt-chip atm-chip" onclick="setAtm(this, '밝고 따뜻한')">🌤 밝고 따뜻한</div>
+          <div class="opt-chip atm-chip" onclick="setAtm(this, '고요한')">🌙 고요한</div>
+        </div>
+      </div>
+
+      <button class="finish-btn" onclick="finishPoster()">✅ 포스터 완성하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 완료 모달 -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <div class="modal-title">완성!</div>
+    <div class="modal-sub">포스터 수정이 반영되어 완성되었습니다.</div>
+    <button class="modal-close" onclick="closeModal()">확인</button>
+  </div>
+</div>
+
+<script>
+let bgColor    = null;
+let atmosphere = null;
+let selectedQ  = null;
+
+const BG = {
+  null:   { grad: 'linear-gradient(160deg, #94a3b8, #64748b)', light: false },
+  red:    { grad: 'linear-gradient(160deg, #ef4444, #b91c1c)', light: false },
+  yellow: { grad: 'linear-gradient(160deg, #fbbf24, #d97706)', light: true  },
+  blue:   { grad: 'linear-gradient(160deg, #3b82f6, #1d4ed8)', light: false },
+};
+
+function applyTitle() {
+  const val = document.getElementById('titleInput').value.trim();
+  const el  = document.getElementById('pTitleText');
+  if (val) {
+    el.textContent = val;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+  updateTextColors();
+}
+
+function selectQ(el, q) {
+  const wasOn = el.classList.contains('on');
+  document.querySelectorAll('.q-chip').forEach(c => c.classList.remove('on'));
+  if (!wasOn) { el.classList.add('on'); selectedQ = q; }
+  else { selectedQ = null; }
+  renderPoster();
+}
+
+function setBg(el, color) {
+  const wasOn = el.classList.contains('on');
+  document.querySelectorAll('.bg-chip').forEach(c => c.classList.remove('on'));
+  if (!wasOn || color === null) {
+    el.classList.add('on');
+    bgColor = color;
+  } else {
+    bgColor = null;
+    document.getElementById('bgNone').classList.add('on');
+  }
+  renderPoster();
+}
+
+function setAtm(el, atm) {
+  const wasOn = el.classList.contains('on');
+  document.querySelectorAll('.atm-chip').forEach(c => c.classList.remove('on'));
+  if (!wasOn) { el.classList.add('on'); atmosphere = atm; }
+  else { atmosphere = null; }
+  renderPoster();
+}
+
+function isEffectivelyLight() {
+  if (atmosphere === '화려한' || atmosphere === '밝고 따뜻한') return true;
+  return bgColor ? BG[bgColor].light : BG[null].light;
+}
+
+function renderPoster() {
+  const cfg = bgColor ? BG[bgColor] : BG[null];
+  document.getElementById('pBgLayer').style.background = cfg.grad;
+  document.getElementById('pDecoLayer').innerHTML = buildDecoSVG(atmosphere, cfg.light);
+
+  const el = isEffectivelyLight();
+  updateTextColors(el);
+
+  const qEl  = document.getElementById('pQuestion');
+  const rbg  = el ? 'rgba(0,0,0,.12)'  : 'rgba(255,255,255,.15)';
+  const rbrd = el ? 'rgba(0,0,0,.22)'  : 'rgba(255,255,255,.30)';
+  qEl.style.background  = rbg;
+  qEl.style.borderColor = rbrd;
+
+  if (selectedQ) {
+    qEl.textContent   = selectedQ;
+    qEl.style.display = 'block';
+    qEl.style.color   = el ? '#713f12' : '#ffffff';
+  } else {
+    qEl.style.display = 'none';
+  }
+}
+
+function updateTextColors(eff) {
+  if (typeof eff !== 'boolean') eff = isEffectivelyLight();
+  const tc = eff ? '#713f12' : '#ffffff';
+  const el = document.getElementById('pTitleText');
+  el.style.color      = tc;
+  el.style.textShadow = eff ? '0 1px 4px rgba(0,0,0,.2)' : '0 2px 8px rgba(0,0,0,.5)';
+}
+
+function buildDecoSVG(atm, light) {
+  const effLight = (atm === '화려한' || atm === '밝고 따뜻한') ? true : light;
+  const a = effLight ? '#713f12' : '#ffffff';
+  const base = `
+    <rect x="0" y="0" width="260" height="5" fill="${a}" opacity=".18"/>
+    <rect x="0" y="365" width="260" height="5" fill="${a}" opacity=".18"/>
+    <rect x="11" y="11" width="238" height="348" rx="5" fill="none" stroke="${a}" stroke-width="1.1" opacity=".22"/>
+    <path d="M11,11 L29,11 M11,11 L11,29" stroke="${a}" stroke-width="2" fill="none" opacity=".38"/>
+    <path d="M249,11 L231,11 M249,11 L249,29" stroke="${a}" stroke-width="2" fill="none" opacity=".38"/>
+    <path d="M11,359 L29,359 M11,359 L11,341" stroke="${a}" stroke-width="2" fill="none" opacity=".38"/>
+    <path d="M249,359 L231,359 M249,359 L249,341" stroke="${a}" stroke-width="2" fill="none" opacity=".38"/>`;
+
+  let extra = '';
+  if (atm === '화려한') {
+    extra = `
+      <rect x="0" y="0" width="260" height="370" fill="rgba(255,255,255,0.50)"/>
+      <rect x="3" y="3" width="254" height="364" rx="4" fill="none" stroke="#b45309" stroke-width="2.5" opacity=".65"/>
+      <rect x="7" y="7" width="246" height="356" rx="3" fill="none" stroke="#b45309" stroke-width=".9" opacity=".4"/>
+      <line x1="0" y1="80"  x2="80"  y2="0"   stroke="#b45309" stroke-width=".6" opacity=".28"/>
+      <line x1="0" y1="160" x2="160" y2="0"   stroke="#b45309" stroke-width=".6" opacity=".28"/>
+      <line x1="0" y1="240" x2="240" y2="0"   stroke="#b45309" stroke-width=".6" opacity=".28"/>
+      <line x1="0" y1="320" x2="260" y2="60"  stroke="#b45309" stroke-width=".6" opacity=".28"/>
+      <line x1="40"  y1="370" x2="260" y2="150" stroke="#b45309" stroke-width=".6" opacity=".28"/>
+      <line x1="130" y1="370" x2="260" y2="240" stroke="#b45309" stroke-width=".6" opacity=".28"/>
+      <line x1="210" y1="370" x2="260" y2="320" stroke="#b45309" stroke-width=".6" opacity=".28"/>
+      ${stars('#b45309')}
+      <g transform="translate(220,348)">
+        <circle cx="0" cy="0" r="20" fill="#fbbf24" opacity=".18"/>
+        <polygon points="0,-14 3.3,-4.5 13.3,-4.3 5.3,1.7 8.2,11.3 0,5.6 -8.2,11.3 -5.3,1.7 -13.3,-4.3 -3.3,-4.5" fill="#fbbf24" opacity=".92"/>
+        <polygon points="0,-14 3.3,-4.5 13.3,-4.3 5.3,1.7 8.2,11.3 0,5.6 -8.2,11.3 -5.3,1.7 -13.3,-4.3 -3.3,-4.5" fill="none" stroke="#fef3c7" stroke-width="1.2" opacity=".7"/>
+      </g>`;
+  } else if (atm === '밝고 따뜻한') {
+    extra = `
+      <rect x="0" y="0" width="260" height="370" fill="rgba(255,251,235,0.55)"/>
+      <defs>
+        <radialGradient id="wg1" cx="20%" cy="8%" r="65%">
+          <stop offset="0%" stop-color="#fbbf24" stop-opacity=".38"/>
+          <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="wg2" cx="80%" cy="8%" r="60%">
+          <stop offset="0%" stop-color="#f59e0b" stop-opacity=".32"/>
+          <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="wg3" cx="50%" cy="96%" r="55%">
+          <stop offset="0%" stop-color="#fde68a" stop-opacity=".42"/>
+          <stop offset="100%" stop-color="#fde68a" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect x="0" y="0" width="260" height="370" fill="url(#wg1)"/>
+      <rect x="0" y="0" width="260" height="370" fill="url(#wg2)"/>
+      <rect x="0" y="0" width="260" height="370" fill="url(#wg3)"/>
+      <circle cx="18"  cy="22"  r="28" fill="#fbbf24" opacity=".22"/>
+      <circle cx="242" cy="26"  r="34" fill="#fcd34d" opacity=".18"/>
+      <circle cx="16"  cy="348" r="30" fill="#fbbf24" opacity=".20"/>
+      <circle cx="244" cy="352" r="26" fill="#fcd34d" opacity=".18"/>
+      <circle cx="130" cy="355" r="20" fill="#fde68a" opacity=".16"/>
+      <circle cx="52"  cy="58"  r="16" fill="#fef3c7" opacity=".3"/>
+      <circle cx="208" cy="62"  r="18" fill="#fef3c7" opacity=".25"/>
+      <path d="M0,338 Q65,326 130,338 Q195,350 260,338" fill="none" stroke="#d97706" stroke-width="2"   opacity=".28"/>
+      <path d="M0,350 Q65,340 130,352 Q195,362 260,350" fill="none" stroke="#d97706" stroke-width="1.2" opacity=".2"/>
+      <path d="M0,32  Q65,20  130,32  Q195,44  260,32"  fill="none" stroke="#d97706" stroke-width="2"   opacity=".28"/>
+      <path d="M0,20  Q65,10  130,22  Q195,32  260,20"  fill="none" stroke="#d97706" stroke-width="1.2" opacity=".2"/>
+      <!-- 왼쪽 상단: 눈송이 -->
+      <g transform="translate(29,46)">
+        <line x1="-14" y1="0"   x2="14"  y2="0"   stroke="#93c5fd" stroke-width="2"   stroke-linecap="round"/>
+        <line x1="0"   y1="-14" x2="0"   y2="14"  stroke="#93c5fd" stroke-width="2"   stroke-linecap="round"/>
+        <line x1="-10" y1="-10" x2="10"  y2="10"  stroke="#93c5fd" stroke-width="2"   stroke-linecap="round"/>
+        <line x1="10"  y1="-10" x2="-10" y2="10"  stroke="#93c5fd" stroke-width="2"   stroke-linecap="round"/>
+        <line x1="-14" y1="-3"  x2="-10" y2="0"   stroke="#93c5fd" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="-14" y1="3"   x2="-10" y2="0"   stroke="#93c5fd" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="14"  y1="-3"  x2="10"  y2="0"   stroke="#93c5fd" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="14"  y1="3"   x2="10"  y2="0"   stroke="#93c5fd" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="-3"  y1="-14" x2="0"   y2="-10" stroke="#93c5fd" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="3"   y1="-14" x2="0"   y2="-10" stroke="#93c5fd" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="-3"  y1="14"  x2="0"   y2="10"  stroke="#93c5fd" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="3"   y1="14"  x2="0"   y2="10"  stroke="#93c5fd" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="0" cy="0" r="3" fill="#bfdbfe"/>
+      </g>
+      <!-- 오른쪽 상단: 크리스마스 종 -->
+      <g transform="translate(231,46)">
+        <path d="M0,-18 C-13,-18 -13,-4 -15,8 L15,8 C13,-4 13,-18 0,-18 Z" fill="#fbbf24" opacity=".92"/>
+        <rect x="-15" y="8" width="30" height="5" rx="2.5" fill="#d97706"/>
+        <circle cx="0" cy="16" r="4.5" fill="#b45309"/>
+        <path d="M-7,-14 C-5,-17 -1,-17 1,-14" fill="none" stroke="#fef3c7" stroke-width="1.8" stroke-linecap="round" opacity=".65"/>
+      </g>
+      <!-- 왼쪽 하단: 호랑가시나무(홀리) -->
+      <g transform="translate(29,318)">
+        <path d="M0,0 C-14,-3 -18,-16 -10,-20 C-4,-22 -2,-12 0,0 Z" fill="#16a34a"/>
+        <path d="M0,0 C14,-3 18,-16 10,-20 C4,-22 2,-12 0,0 Z"  fill="#22c55e"/>
+        <circle cx="-4" cy="-3" r="5" fill="#dc2626"/>
+        <circle cx="4"  cy="-6" r="5" fill="#ef4444"/>
+        <circle cx="0"  cy="-1" r="4" fill="#b91c1c"/>
+      </g>
+      <!-- 오른쪽 하단: 크리스마스 트리 -->
+      <g transform="translate(231,338)">
+        <polygon points="0,-14 1.5,-10 5,-10 2,-7.5 3.5,-3.5 0,-6 -3.5,-3.5 -2,-7.5 -5,-10 -1.5,-10" fill="#fbbf24"/>
+        <polygon points="0,-10 -8,0  8,0"   fill="#22c55e"/>
+        <polygon points="0,-5  -11,8  11,8"  fill="#16a34a"/>
+        <polygon points="0,0   -14,18 14,18" fill="#15803d"/>
+        <rect x="-4" y="18" width="8" height="7" rx="1.5" fill="#92400e"/>
+        <circle cx="-5" cy="-2" r="2.5" fill="#ef4444"/>
+        <circle cx="6"  cy="3"  r="2.5" fill="#3b82f6"/>
+        <circle cx="-8" cy="9"  r="2.5" fill="#fbbf24"/>
+        <circle cx="8"  cy="10" r="2.5" fill="#ef4444"/>
+        <circle cx="0"  cy="14" r="2.5" fill="#a855f7"/>
+      </g>
+      <!-- 작은 눈 결정 -->
+      <circle cx="29"  cy="185" r="3" fill="#bfdbfe" opacity=".55"/>
+      <circle cx="22"  cy="195" r="2" fill="#93c5fd" opacity=".45"/>
+      <circle cx="36"  cy="195" r="2" fill="#bfdbfe" opacity=".45"/>
+      <circle cx="231" cy="185" r="3" fill="#bfdbfe" opacity=".55"/>
+      <circle cx="224" cy="195" r="2" fill="#93c5fd" opacity=".45"/>
+      <circle cx="238" cy="195" r="2" fill="#bfdbfe" opacity=".45"/>`;
+  } else if (atm === '고요한') {
+    extra = `
+      <rect x="20" y="20" width="220" height="330" rx="3"
+        fill="none" stroke="${a}" stroke-width=".5" opacity=".28"/>
+      <line x1="35" y1="92"  x2="225" y2="92"  stroke="${a}" stroke-width=".4" stroke-dasharray="2,8" opacity=".22"/>
+      <line x1="35" y1="185" x2="225" y2="185" stroke="${a}" stroke-width=".4" stroke-dasharray="2,8" opacity=".16"/>
+      <line x1="35" y1="278" x2="225" y2="278" stroke="${a}" stroke-width=".4" stroke-dasharray="2,8" opacity=".22"/>
+      <circle cx="26"  cy="26"  r="2" fill="${a}" opacity=".32"/>
+      <circle cx="234" cy="26"  r="2" fill="${a}" opacity=".32"/>
+      <circle cx="26"  cy="344" r="2" fill="${a}" opacity=".32"/>
+      <circle cx="234" cy="344" r="2" fill="${a}" opacity=".32"/>
+      <rect x="0" y="298" width="260" height="72" fill="${a}" opacity=".04"/>`;
+  }
+
+  return `<svg width="260" height="370" xmlns="http://www.w3.org/2000/svg">${base}${extra}</svg>`;
+}
+
+function stars(a) {
+  const pts = [[36,70],[224,60],[50,158],[212,176],[30,250],[234,236],[80,326],[180,320],[130,106],[130,246]];
+  return pts.map(([x, y]) => {
+    const s = 5 + (x + y) % 4;
+    const d = (s * .65).toFixed(1);
+    return `<g transform="translate(${x},${y})">
+      <line x1="0" y1="-${s}" x2="0" y2="${s}" stroke="${a}" stroke-width="1.3" opacity=".6"/>
+      <line x1="-${s}" y1="0" x2="${s}" y2="0" stroke="${a}" stroke-width="1.3" opacity=".6"/>
+      <line x1="-${d}" y1="-${d}" x2="${d}" y2="${d}" stroke="${a}" stroke-width=".8" opacity=".4"/>
+      <line x1="${d}" y1="-${d}" x2="-${d}" y2="${d}" stroke="${a}" stroke-width=".8" opacity=".4"/>
+    </g>`;
+  }).join('');
+}
+
+function finishPoster() {
+  document.getElementById('modalBg').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('show');
+}
+</script>
+</body>
+</html>

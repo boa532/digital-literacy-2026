@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1문항 - AI 기능 분류</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nanum Gothic', '맑은 고딕', sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 48px;
+  }
+
+  .question-box {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 28px 32px;
+    max-width: 860px;
+    width: 100%;
+    margin-bottom: 24px;
+  }
+
+  .question-number {
+    display: inline-block;
+    background: #3b5bdb;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 20px;
+    padding: 4px 14px;
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  .question-text {
+    font-size: 16px;
+    line-height: 1.9;
+    color: #1a1a2e;
+    font-weight: 600;
+  }
+
+  .question-text .hint {
+    font-size: 13px;
+    color: #868e96;
+    font-weight: 400;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* 보기 박스 */
+  .source-section {
+    max-width: 860px;
+    width: 100%;
+    margin-bottom: 24px;
+  }
+
+  .section-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #495057;
+    margin-bottom: 10px;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 16px;
+    background: #3b5bdb;
+    border-radius: 2px;
+  }
+
+  .source-box {
+    background: #fff;
+    border: 2px dashed #adb5bd;
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 80px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .source-box.drag-over {
+    background: #e7f5ff;
+    border-color: #3b5bdb;
+  }
+
+  /* 드롭 영역 */
+  .drop-area-wrapper {
+    max-width: 860px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .drop-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .drop-box {
+    flex: 1;
+    background: #fff;
+    border-radius: 14px;
+    border: 2px solid #dee2e6;
+    padding: 16px;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .drop-box.ai-yes { border-top: 5px solid #2f9e44; }
+  .drop-box.ai-no  { border-top: 5px solid #e03131; }
+
+  .drop-box.drag-over {
+    background: #f8f9fa;
+    border-color: #3b5bdb;
+  }
+
+  .drop-box-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .drop-box-icon {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+
+  .ai-yes .drop-box-icon { background: #d3f9d8; }
+  .ai-no  .drop-box-icon { background: #ffe3e3; }
+
+  .drop-box-title {
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .ai-yes .drop-box-title { color: #2f9e44; }
+  .ai-no  .drop-box-title { color: #e03131; }
+
+  .drop-box-desc {
+    font-size: 11px;
+    color: #868e96;
+    font-weight: 400;
+    margin-top: 2px;
+    line-height: 1.5;
+  }
+
+  .drop-placeholder {
+    font-size: 13px;
+    color: #ced4da;
+    text-align: center;
+    margin: auto;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* 기능 카드 */
+  .card {
+    background: #f8f9fa;
+    border: 1.5px solid #dee2e6;
+    border-radius: 10px;
+    padding: 13px 16px;
+    font-size: 14px;
+    color: #1a1a2e;
+    line-height: 1.65;
+    cursor: grab;
+    user-select: none;
+    transition: box-shadow 0.15s, transform 0.15s, background 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .card:active { cursor: grabbing; }
+
+  .card:hover {
+    box-shadow: 0 4px 14px rgba(59,91,219,0.15);
+    background: #edf2ff;
+    border-color: #748ffc;
+    transform: translateY(-1px);
+  }
+
+  .card.dragging {
+    opacity: 0.45;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    transform: scale(1.02);
+  }
+
+  .card-num {
+    font-weight: 700;
+    color: #3b5bdb;
+    flex-shrink: 0;
+    font-size: 15px;
+    min-width: 20px;
+  }
+
+  /* 버튼 */
+  .btn-row {
+    max-width: 860px;
+    width: 100%;
+    margin-top: 24px;
+    display: flex;
+    gap: 12px;
+  }
+
+  .reset-btn {
+    background: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 10px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .reset-btn:hover {
+    border-color: #3b5bdb;
+    color: #3b5bdb;
+    background: #edf2ff;
+  }
+
+  .complete-btn {
+    background: #3b5bdb;
+    border: 2px solid #3b5bdb;
+    border-radius: 10px;
+    padding: 10px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .complete-btn:hover {
+    background: #2f4ac7;
+    border-color: #2f4ac7;
+  }
+
+  /* 완료 토스트 */
+  .toast {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    padding: 36px 48px;
+    text-align: center;
+    z-index: 1000;
+    font-size: 18px;
+    font-weight: 700;
+    color: #2f9e44;
+    border-top: 6px solid #2f9e44;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .toast.show { display: block; }
+  .toast-icon { font-size: 36px; margin-bottom: 12px; }
+
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 999;
+  }
+  .overlay.show { display: block; }
+
+  .toast-close {
+    margin-top: 18px;
+    background: #2f9e44;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -46%); }
+    to   { opacity: 1; transform: translate(-50%, -50%); }
+  }
+
+  @media (max-width: 640px) {
+    .drop-area-wrapper { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 문제 -->
+<div class="question-box">
+  <span class="question-number">1 문항</span>
+  <p class="question-text">
+    영희는 도서 추천 AI 서비스를 도입하고자 합니다.<br>
+    다음 중 도서 추천 AI 서비스가 제공하는 <strong>AI 기능</strong>으로 적절한 것과 아닌 것을 분류해 보세요.
+    <span class="hint">※ 기능 카드를 끌어다 놓으세요.</span>
+  </p>
+</div>
+
+<!-- 보기 박스 -->
+<div class="source-section">
+  <div class="section-label">기능 카드</div>
+  <div class="source-box" id="source"
+       ondragover="onDragOver(event)"
+       ondragleave="onDragLeave(event)"
+       ondrop="onDrop(event,'source')">
+
+    <div class="card" id="card1" draggable="true" ondragstart="onDragStart(event)">
+      <span class="card-num">①</span>
+      <span>도서관 이용 규정에 따라 연체 도서의 벌점 기준을 안내한다.</span>
+    </div>
+    <div class="card" id="card2" draggable="true" ondragstart="onDragStart(event)">
+      <span class="card-num">②</span>
+      <span>독서 이력과 관심 분야 데이터를 학습하여 맞춤 도서를 추천한다.</span>
+    </div>
+    <div class="card" id="card3" draggable="true" ondragstart="onDragStart(event)">
+      <span class="card-num">③</span>
+      <span>전교생의 독서 기록을 분석하여 관심 가질 만한 도서를 예측한다.</span>
+    </div>
+    <div class="card" id="card4" draggable="true" ondragstart="onDragStart(event)">
+      <span class="card-num">④</span>
+      <span>반납해야 하는 날짜 이틀 전에 반납 안내 메시지를 자동으로 발송한다.</span>
+    </div>
+    <div class="card" id="card5" draggable="true" ondragstart="onDragStart(event)">
+      <span class="card-num">⑤</span>
+      <span>새로 들어온 도서를 정해진 규칙에 따라 최신 날짜 순서대로 정렬해 보여준다.</span>
+    </div>
+  </div>
+</div>
+
+<!-- 드롭 영역 -->
+<div class="drop-area-wrapper">
+
+  <!-- AI 기능 -->
+  <div class="drop-section">
+    <div class="section-label">AI 기능인 것</div>
+    <div class="drop-box ai-yes" id="drop-yes"
+         ondragover="onDragOver(event)"
+         ondragleave="onDragLeave(event)"
+         ondrop="onDrop(event,'drop-yes')">
+      <div class="drop-box-header">
+        <div class="drop-box-icon">🤖</div>
+        <div>
+          <div class="drop-box-title">AI 기능</div>
+          <div class="drop-box-desc">데이터를 학습, 분석하여 예측·추천·판단하는 기능</div>
+        </div>
+      </div>
+      <p class="drop-placeholder" id="placeholder-yes">여기에 카드를 놓으세요</p>
+    </div>
+  </div>
+
+  <!-- AI 기능 아닌 것 -->
+  <div class="drop-section">
+    <div class="section-label">AI 기능이 아닌 것</div>
+    <div class="drop-box ai-no" id="drop-no"
+         ondragover="onDragOver(event)"
+         ondragleave="onDragLeave(event)"
+         ondrop="onDrop(event,'drop-no')">
+      <div class="drop-box-header">
+        <div class="drop-box-icon">⚙️</div>
+        <div>
+          <div class="drop-box-title">AI 기능 아님</div>
+          <div class="drop-box-desc">정해진 규칙, 조건, 순서에 따라 자동으로 처리하는 기능</div>
+        </div>
+      </div>
+      <p class="drop-placeholder" id="placeholder-no">여기에 카드를 놓으세요</p>
+    </div>
+  </div>
+</div>
+
+<!-- 버튼 -->
+<div class="btn-row">
+  <button class="reset-btn" onclick="resetAll()">↺ 처음으로 되돌리기</button>
+  <button class="complete-btn" onclick="showComplete()">분류 완료</button>
+</div>
+
+<!-- 완료 토스트 -->
+<div class="overlay" id="overlay" onclick="closeComplete()"></div>
+<div class="toast" id="toast">
+  <div class="toast-icon">✅</div>
+  분류가 완료되었습니다.
+  <br>
+  <button class="toast-close" onclick="closeComplete()">확인</button>
+</div>
+
+<script>
+  let draggedId = null;
+  let draggedFrom = null;
+
+  function onDragStart(e) {
+    draggedId   = e.currentTarget.id;
+    draggedFrom = e.currentTarget.parentElement.id;
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  });
+
+  function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('drag-over');
+  }
+
+  function onDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+
+  function onDrop(e, targetId) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    if (!draggedId || targetId === draggedFrom) return;
+
+    const card   = document.getElementById(draggedId);
+    const target = document.getElementById(targetId);
+    updatePlaceholder(draggedFrom);
+    target.appendChild(card);
+    updatePlaceholder(targetId);
+    draggedFrom = targetId;
+  }
+
+  function updatePlaceholder(boxId) {
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    const ph = box.querySelector('.drop-placeholder');
+    if (!ph) return;
+    ph.style.display = box.querySelectorAll('.card').length === 0 ? 'block' : 'none';
+  }
+
+  function resetAll() {
+    const source = document.getElementById('source');
+    ['card1','card2','card3','card4','card5'].forEach(id => {
+      source.appendChild(document.getElementById(id));
+    });
+    ['source','drop-yes','drop-no'].forEach(updatePlaceholder);
+  }
+
+  function showComplete() {
+    document.getElementById('overlay').classList.add('show');
+    document.getElementById('toast').classList.add('show');
+  }
+
+  function closeComplete() {
+    document.getElementById('overlay').classList.remove('show');
+    document.getElementById('toast').classList.remove('show');
+  }
+
+  updatePlaceholder('drop-yes');
+  updatePlaceholder('drop-no');
+</script>
+</body>
+</html>

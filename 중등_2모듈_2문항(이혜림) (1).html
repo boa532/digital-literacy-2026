@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2문항 - AI 재학습 데이터 선택</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nanum Gothic', '맑은 고딕', sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 56px;
+  }
+
+  /* ── 문항 박스 ── */
+  .question-box {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    padding: 28px 32px;
+    max-width: 900px;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .question-number {
+    display: inline-block;
+    background: #3b5bdb;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    border-radius: 20px;
+    padding: 4px 14px;
+    margin-bottom: 14px;
+    letter-spacing: .5px;
+  }
+
+  .question-text {
+    font-size: 16px;
+    line-height: 1.9;
+    color: #1a1a2e;
+    font-weight: 600;
+  }
+
+  .question-text .hint {
+    font-size: 13px;
+    color: #868e96;
+    font-weight: 400;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* ── 섹션 레이블 ── */
+  .section-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #495057;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 4px; height: 16px;
+    background: #3b5bdb;
+    border-radius: 2px;
+  }
+
+  /* ── 보기 박스 ── */
+  .source-section {
+    max-width: 900px;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+
+  .source-box {
+    background: #fff;
+    border: 2px dashed #adb5bd;
+    border-radius: 14px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-height: 60px;
+    transition: background .2s, border-color .2s;
+  }
+
+  .source-box.drag-over {
+    background: #e7f5ff;
+    border-color: #3b5bdb;
+  }
+
+  /* ── 메인 2열 ── */
+  .main-area {
+    max-width: 900px;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* ── 데이터 선택 패널 ── */
+  .data-panel {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    padding: 22px 24px;
+  }
+
+  .data-drop-zone {
+    border: 2.5px dashed #dee2e6;
+    border-radius: 12px;
+    min-height: 130px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    transition: all .2s;
+    background: #fafbfc;
+  }
+
+  .data-drop-zone.drag-over {
+    border-color: #3b5bdb;
+    background: #edf2ff;
+  }
+
+  .data-drop-zone.has-card {
+    border-style: solid;
+    border-color: #4c6ef5;
+    background: #edf2ff;
+  }
+
+  .drop-placeholder {
+    font-size: 13px;
+    color: #ced4da;
+    text-align: center;
+    margin: auto;
+    pointer-events: none;
+    user-select: none;
+    line-height: 1.8;
+    padding: 10px 0;
+  }
+
+  .drop-placeholder .p-icon {
+    font-size: 30px;
+    display: block;
+    margin-bottom: 8px;
+    opacity: .5;
+  }
+
+  .remove-hint {
+    font-size: 11px;
+    color: #868e96;
+    margin-top: 8px;
+    text-align: center;
+  }
+
+  /* ── AI 학습 패널 ── */
+  .train-panel {
+    background: #16162a;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.2);
+    padding: 24px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .model-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .model-icon-wrap {
+    width: 50px; height: 50px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #3b5bdb, #845ef7);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(132,94,247,.4);
+  }
+
+  .model-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #e9ecef;
+    letter-spacing: .3px;
+  }
+
+  .model-version {
+    font-size: 11px;
+    color: #748ffc;
+    margin-top: 3px;
+  }
+
+  .divider { height: 1px; background: rgba(255,255,255,.08); }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #495057;
+    flex-shrink: 0;
+    transition: background .3s;
+  }
+
+  .status-dot.ready   { background: #ffd43b; animation: blink 1.6s ease-in-out infinite; }
+  .status-dot.running { background: #51cf66; animation: blink .7s ease-in-out infinite; }
+  .status-dot.done    { background: #51cf66; animation: none; }
+
+  @keyframes blink {
+    0%,100% { opacity: 1; } 50% { opacity: .3; }
+  }
+
+  .status-text {
+    font-size: 12px;
+    color: #868e96;
+    line-height: 1.5;
+  }
+
+  .data-selected {
+    font-size: 12px;
+    color: #748ffc;
+    font-style: italic;
+    min-height: 16px;
+    text-align: center;
+  }
+
+  /* 진행 바 */
+  .progress-wrap { display: none; }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #868e96;
+    margin-bottom: 6px;
+  }
+
+  .progress-track {
+    height: 8px;
+    background: rgba(255,255,255,.1);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3b5bdb, #845ef7);
+    border-radius: 4px;
+    transition: width .06s linear;
+  }
+
+  .epoch-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 7px;
+    font-size: 11px;
+    color: #495057;
+  }
+
+  .epoch-val { color: #a5b4fc; font-weight: 700; }
+
+  /* 학습 버튼 */
+  .train-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, #3b5bdb, #845ef7);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    box-shadow: 0 4px 16px rgba(59,91,219,.4);
+    letter-spacing: .5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .train-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(59,91,219,.5);
+  }
+
+  .train-btn:disabled {
+    background: rgba(255,255,255,.07);
+    color: rgba(255,255,255,.25);
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ── 카드 ── */
+  .card {
+    background: #f8f9fa;
+    border: 1.5px solid #dee2e6;
+    border-radius: 10px;
+    padding: 13px 16px;
+    font-size: 14px;
+    color: #1a1a2e;
+    line-height: 1.65;
+    cursor: grab;
+    user-select: none;
+    transition: box-shadow .15s, transform .15s, background .15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .card:active { cursor: grabbing; }
+
+  .card:hover {
+    box-shadow: 0 4px 14px rgba(59,91,219,.15);
+    background: #edf2ff;
+    border-color: #748ffc;
+    transform: translateY(-1px);
+  }
+
+  .card.dragging { opacity: .4; transform: scale(1.02); }
+
+  .data-drop-zone .card {
+    background: #fff;
+    border-color: #4c6ef5;
+    cursor: pointer;
+  }
+
+  .data-drop-zone .card:hover {
+    background: #fff9e6;
+    border-color: #f59f00;
+    transform: translateY(-1px);
+  }
+
+  .card-num {
+    font-weight: 700;
+    color: #3b5bdb;
+    flex-shrink: 0;
+    font-size: 15px;
+    min-width: 20px;
+  }
+
+  /* 리셋 버튼 */
+  .btn-row {
+    max-width: 900px;
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .reset-btn {
+    background: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 10px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+    cursor: pointer;
+    transition: all .15s;
+  }
+
+  .reset-btn:hover {
+    border-color: #3b5bdb;
+    color: #3b5bdb;
+    background: #edf2ff;
+  }
+
+  /* ── 완료 모달 ── */
+  .modal-bg {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 999;
+    align-items: center; justify-content: center;
+  }
+
+  .modal-bg.show { display: flex; }
+
+  .modal {
+    background: #fff;
+    border-radius: 20px;
+    padding: 44px 52px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,.22);
+    animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
+    border-top: 6px solid #2f9e44;
+    max-width: 400px; width: 92%;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(.82); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .modal-icon { font-size: 50px; margin-bottom: 16px; }
+  .modal-title { font-size: 20px; font-weight: 800; color: #1a1a2e; margin-bottom: 8px; }
+  .modal-sub { font-size: 13px; color: #868e96; line-height: 1.8; margin-bottom: 26px; }
+
+  .modal-close {
+    background: #2f9e44; color: #fff;
+    border: none; border-radius: 10px;
+    padding: 11px 36px;
+    font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: background .15s;
+  }
+
+  .modal-close:hover { background: #2b8a3e; }
+
+  @media (max-width: 680px) {
+    .main-area { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 문항 -->
+<div class="question-box">
+  <span class="question-number">2 문항</span>
+  <p class="question-text">
+    도서추천 AI모델을 테스트해 보니 학생들의 관심 분야와 관계없이 일부 과학책만 반복해서 추천했습니다.<br>
+    학생들의 다양한 관심 분야를 반영해 맞춤 도서를 추천하도록 AI모델을 개선하고자 합니다.<br>
+    다음 중 AI모델을 다시 학습시키기에 <strong>가장 적절한 데이터</strong>를 고르고 학습을 완료해 보세요.
+    <span class="hint">※ 데이터 목록에서 데이터를 선택하거나 끌어다 놓은 후 학습 시작 버튼을 누르세요.</span>
+  </p>
+</div>
+
+<!-- 보기 박스 -->
+<div class="source-section">
+  <div class="section-label">데이터 목록</div>
+  <div class="source-box" id="source"
+       ondragover="onDragOver(event)"
+       ondragleave="onDragLeave(event)"
+       ondrop="onDrop(event,'source')">
+    <div class="card" id="card1" draggable="true"
+         ondragstart="onDragStart(event)" onclick="onCardClick('card1')">
+      <span class="card-num">①</span>
+      <span>3년 전 졸업생들의 대출 기록</span>
+    </div>
+    <div class="card" id="card2" draggable="true"
+         ondragstart="onDragStart(event)" onclick="onCardClick('card2')">
+      <span class="card-num">②</span>
+      <span>과학 교사 2명의 추천 도서 목록</span>
+    </div>
+    <div class="card" id="card3" draggable="true"
+         ondragstart="onDragStart(event)" onclick="onCardClick('card3')">
+      <span class="card-num">③</span>
+      <span>도서부 학생 5명의 지난달 대출 기록</span>
+    </div>
+    <div class="card" id="card4" draggable="true"
+         ondragstart="onDragStart(event)" onclick="onCardClick('card4')">
+      <span class="card-num">④</span>
+      <span>전교생의 최근 3년 대출 기록, 관심 분야 설문</span>
+    </div>
+    <div class="card" id="card5" draggable="true"
+         ondragstart="onDragStart(event)" onclick="onCardClick('card5')">
+      <span class="card-num">⑤</span>
+      <span>인터넷에서 수집한 성인 독자 독서 기록과 평점</span>
+    </div>
+  </div>
+</div>
+
+<!-- 메인 영역 -->
+<div class="main-area">
+
+  <!-- 데이터 선택 패널 -->
+  <div class="data-panel">
+    <div class="section-label">선택한 학습 데이터</div>
+    <div class="data-drop-zone" id="dataDropZone"
+         ondragover="onDragOver(event)"
+         ondragleave="onDragLeave(event)"
+         ondrop="onDrop(event,'dataDropZone')">
+      <div id="zonePlaceholder">
+        <p class="drop-placeholder">
+          <span class="p-icon">📂</span>
+          위 목록에서 데이터를 끌어다 놓거나<br>카드를 클릭하여 선택하세요
+        </p>
+      </div>
+    </div>
+    <p class="remove-hint" id="removeHint" style="display:none;">
+      선택한 카드를 다시 클릭하면 목록으로 돌아갑니다
+    </p>
+  </div>
+
+  <!-- AI 학습 패널 -->
+  <div class="train-panel">
+
+    <div class="model-header">
+      <div class="model-icon-wrap">🤖</div>
+      <div>
+        <div class="model-name">도서추천 AI 모델</div>
+        <div class="model-version">재학습 대기 상태</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="status-row">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-text" id="statusText">데이터를 먼저 선택해 주세요</span>
+    </div>
+
+    <div class="data-selected" id="dataSelected">— 선택된 데이터 없음 —</div>
+
+    <!-- 진행 바 (학습 중에만 표시) -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-header">
+        <span id="progressStage">초기화 중...</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="epoch-row">
+        <span>에포크 <span class="epoch-val" id="epochVal">0</span> / 50</span>
+        <span>정확도 <span class="epoch-val" id="accVal">—</span></span>
+      </div>
+    </div>
+
+    <button class="train-btn" id="trainBtn" disabled onclick="startTraining()">
+      🧠 학습 시작
+    </button>
+
+  </div>
+</div>
+
+<!-- 리셋 버튼 -->
+<div class="btn-row">
+  <button class="reset-btn" onclick="resetAll()">↺ 처음으로 되돌리기</button>
+</div>
+
+<!-- 완료 모달 -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <div class="modal-title">학습이 완료되었습니다!</div>
+    <div class="modal-sub" id="modalSub">
+      선택한 데이터로 AI 모델이<br>성공적으로 업데이트되었습니다.
+    </div>
+    <button class="modal-close" onclick="closeModal()">확인</button>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════
+   드래그 & 드롭 + 클릭
+════════════════════════ */
+let draggedId   = null;
+let draggedFrom = null;
+let currentCard = null;
+let isTraining  = false;
+
+function onDragStart(e) {
+  if (isTraining) { e.preventDefault(); return; }
+  draggedId   = e.currentTarget.id;
+  draggedFrom = e.currentTarget.parentElement.id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('dragend', () => card.classList.remove('dragging'));
+});
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drag-over');
+}
+
+function onDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function onDrop(e, targetId) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!draggedId || targetId === draggedFrom) return;
+
+  if (targetId === 'dataDropZone') {
+    placeCard(draggedId);
+  } else if (targetId === 'source') {
+    if (draggedFrom === 'dataDropZone') returnCard();
+  }
+}
+
+/* 카드 클릭 핸들러 */
+function onCardClick(cardId) {
+  if (isTraining) return;
+  const card = document.getElementById(cardId);
+  if (card.parentElement.id === 'dataDropZone') {
+    returnCard();
+  } else {
+    placeCard(cardId);
+  }
+}
+
+/* 드롭존에 카드 배치 */
+function placeCard(cardId) {
+  if (currentCard && currentCard !== cardId) returnCard();
+
+  const card   = document.getElementById(cardId);
+  const zone   = document.getElementById('dataDropZone');
+  const holder = document.getElementById('zonePlaceholder');
+
+  holder.style.display = 'none';
+  zone.classList.add('has-card');
+  zone.appendChild(card);
+  currentCard = cardId;
+
+  document.getElementById('removeHint').style.display = 'block';
+  refreshTrainPanel(true);
+}
+
+/* 드롭존에서 카드 반환 */
+function returnCard() {
+  if (!currentCard) return;
+  const card   = document.getElementById(currentCard);
+  const zone   = document.getElementById('dataDropZone');
+  const holder = document.getElementById('zonePlaceholder');
+
+  document.getElementById('source').appendChild(card);
+  zone.classList.remove('has-card');
+  holder.style.display = '';
+  currentCard = null;
+
+  document.getElementById('removeHint').style.display = 'none';
+  refreshTrainPanel(false);
+}
+
+/* ════════════════════════
+   학습 패널 상태
+════════════════════════ */
+function refreshTrainPanel(hasData) {
+  const dot      = document.getElementById('statusDot');
+  const text     = document.getElementById('statusText');
+  const btn      = document.getElementById('trainBtn');
+  const selected = document.getElementById('dataSelected');
+
+  if (hasData) {
+    const label = document.getElementById(currentCard)
+                           .querySelector('span:last-child').textContent.trim();
+    dot.className    = 'status-dot ready';
+    text.textContent = '학습 준비 완료 — 버튼을 눌러 시작';
+    selected.textContent = '📁 ' + label;
+    btn.disabled     = false;
+    btn.textContent  = '🧠 학습 시작';
+  } else {
+    dot.className    = 'status-dot';
+    text.textContent = '데이터를 먼저 선택해 주세요';
+    selected.textContent = '— 선택된 데이터 없음 —';
+    btn.disabled     = true;
+    btn.textContent  = '🧠 학습 시작';
+    document.getElementById('progressWrap').style.display = 'none';
+    document.getElementById('progressFill').style.width   = '0%';
+  }
+}
+
+/* ════════════════════════
+   학습 시뮬레이션
+════════════════════════ */
+const STAGES = [
+  [0,  '데이터 전처리 중...'],
+  [20, '특징 추출 중...'],
+  [45, '모델 학습 중...'],
+  [70, '가중치 업데이트 중...'],
+  [90, '정확도 검증 중...'],
+  [100,'학습 완료!']
+];
+
+function startTraining() {
+  if (isTraining || !currentCard) return;
+  isTraining = true;
+
+  const btn       = document.getElementById('trainBtn');
+  const wrap      = document.getElementById('progressWrap');
+  const fill      = document.getElementById('progressFill');
+  const pctEl     = document.getElementById('progressPct');
+  const stageEl   = document.getElementById('progressStage');
+  const epochEl   = document.getElementById('epochVal');
+  const accEl     = document.getElementById('accVal');
+  const dot       = document.getElementById('statusDot');
+  const statusTxt = document.getElementById('statusText');
+
+  btn.disabled    = true;
+  btn.textContent = '⏳ 학습 중...';
+  wrap.style.display = 'block';
+  dot.className   = 'status-dot running';
+  statusTxt.textContent = '학습 진행 중...';
+
+  let pct = 0;
+  const timer = setInterval(() => {
+    pct = Math.min(pct + 1, 100);
+    fill.style.width    = pct + '%';
+    pctEl.textContent   = pct + '%';
+    epochEl.textContent = Math.floor(pct / 2);
+
+    if (pct > 10) {
+      accEl.textContent = (42 + pct * 0.5).toFixed(1) + '%';
+    }
+
+    for (let i = STAGES.length - 1; i >= 0; i--) {
+      if (pct >= STAGES[i][0]) { stageEl.textContent = STAGES[i][1]; break; }
+    }
+
+    if (pct >= 100) {
+      clearInterval(timer);
+      dot.className       = 'status-dot done';
+      statusTxt.textContent = '학습 완료';
+      btn.textContent     = '✓ 완료';
+
+      setTimeout(() => {
+        const label = document.getElementById(currentCard)
+                               .querySelector('span:last-child').textContent.trim();
+        document.getElementById('modalSub').innerHTML =
+          '선택한 데이터 (<strong>' + label + '</strong>)로<br>' +
+          'AI 모델이 성공적으로 업데이트되었습니다.';
+        document.getElementById('modalBg').classList.add('show');
+      }, 500);
+    }
+  }, 28);
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('show');
+}
+
+/* 리셋 */
+function resetAll() {
+  if (isTraining) return;
+  if (currentCard) returnCard();
+  const source = document.getElementById('source');
+  ['card1','card2','card3','card4','card5'].forEach(id => {
+    source.appendChild(document.getElementById(id));
+  });
+  isTraining = false;
+}
+</script>
+</body>
+</html>
